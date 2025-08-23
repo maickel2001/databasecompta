@@ -299,6 +299,47 @@ class Comment {
         
         return $chart_data;
     }
+    
+    // Update comment status
+    public function updateStatus($id, $status) {
+        $query = "UPDATE " . $this->table_name . " SET status = ? WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([$status, $id]);
+    }
+    
+    // Delete comment by ID
+    public function delete($id) {
+        $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([$id]);
+    }
+    
+    // Get approved comment count
+    public function getApprovedCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE status = 'approved'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get rejected comment count
+    public function getRejectedCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE status = 'rejected'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get spam comment count
+    public function getSpamCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE status = 'spam'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
 }
 
 ?>

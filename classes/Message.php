@@ -278,6 +278,56 @@ class Message {
         $stmt->execute([$limit]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    
+    // Update message status
+    public function updateStatus($id, $status) {
+        $query = "UPDATE " . $this->table_name . " SET status = ? WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([$status, $id]);
+    }
+    
+    // Delete message by ID
+    public function delete($id) {
+        $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([$id]);
+    }
+    
+    // Get read message count
+    public function getReadCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE status = 'read'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get archived message count
+    public function getArchivedCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE status = 'archived'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get today's message count
+    public function getTodayCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE DATE(created_at) = CURDATE()";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get this week's message count
+    public function getThisWeekCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE YEARWEEK(created_at) = YEARWEEK(NOW())";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
 }
 
 ?>
