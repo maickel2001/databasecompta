@@ -257,6 +257,123 @@ class Post {
         $this->created_at = $row['created_at'];
         $this->updated_at = $row['updated_at'];
     }
+    
+    // Delete post by ID (static method for admin)
+    public function delete($id) {
+        $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([$id]);
+    }
+    
+    // Get published post count
+    public function getPublishedCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE status = 'published'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get draft post count
+    public function getDraftCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE status = 'draft'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get total views across all posts
+    public function getTotalViews() {
+        $query = "SELECT SUM(view_count) as total_views FROM " . $this->table_name;
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total_views'] ?? 0;
+    }
+    
+    // Get today's views
+    public function getTodayViews() {
+        // This would require a views tracking table for accurate daily stats
+        // For now, we'll return a simplified calculation
+        $query = "SELECT SUM(view_count) as today_views FROM " . $this->table_name . " WHERE DATE(created_at) = CURDATE()";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['today_views'] ?? 0;
+    }
+    
+    // Get this month's post count
+    public function getThisMonthCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Update post status
+    public function updateStatus($id, $status) {
+        $query = "UPDATE " . $this->table_name . " SET status = :status, updated_at = NOW() WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':status', $status);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+    
+    // Get views chart data for last N days
+    public function getViewsChart($days = 30) {
+        $query = "SELECT DATE(created_at) as date, SUM(view_count) as views 
+                  FROM " . $this->table_name . " 
+                  WHERE created_at >= DATE_SUB(NOW(), INTERVAL :days DAY)
+                  GROUP BY DATE(created_at)
+                  ORDER BY date ASC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':days', $days, PDO::PARAM_INT);
+        $stmt->execute();
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Fill in missing days with 0 views
+        $chart_data = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days"));
+            $chart_data[$date] = 0;
+        }
+        
+        foreach ($results as $result) {
+            $chart_data[$result['date']] = (int)$result['views'];
+        }
+        
+        return $chart_data;
+    }
+    
+    // Get posts chart data for last N days
+    public function getPostsChart($days = 30) {
+        $query = "SELECT DATE(created_at) as date, COUNT(*) as posts 
+                  FROM " . $this->table_name . " 
+                  WHERE created_at >= DATE_SUB(NOW(), INTERVAL :days DAY)
+                  GROUP BY DATE(created_at)
+                  ORDER BY date ASC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':days', $days, PDO::PARAM_INT);
+        $stmt->execute();
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Fill in missing days with 0 posts
+        $chart_data = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days"));
+            $chart_data[$date] = 0;
+        }
+        
+        foreach ($results as $result) {
+            $chart_data[$result['date']] = (int)$result['posts'];
+        }
+        
+        return $chart_data;
+    }
 }
 
 ?>

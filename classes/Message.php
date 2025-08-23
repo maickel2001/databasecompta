@@ -261,6 +261,23 @@ class Message {
         $this->status = $row['status'];
         $this->created_at = $row['created_at'];
     }
+    
+    // Get unread message count
+    public function getUnreadCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE status = 'unread'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get recent messages
+    public function getRecent($limit = 5) {
+        $query = "SELECT * FROM " . $this->table_name . " ORDER BY created_at DESC LIMIT ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$limit]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 
 ?>

@@ -226,6 +226,79 @@ class Comment {
         $this->status = $row['status'];
         $this->created_at = $row['created_at'];
     }
+    
+    // Get total comment count
+    public function getTotalCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name;
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get pending comment count
+    public function getPendingCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE status = 'pending'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get recent comments
+    public function getRecent($limit = 5) {
+        $query = "SELECT c.*, p.title as post_title FROM " . $this->table_name . " c 
+                 LEFT JOIN posts p ON c.post_id = p.id 
+                 ORDER BY c.created_at DESC LIMIT ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$limit]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    // Get this month's comment count
+    public function getThisMonthCount() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get comment count by post ID
+    public function getCountByPostId($post_id) {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE post_id = ? AND status = 'approved'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$post_id]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
+    // Get comments chart data for last N days
+    public function getCommentsChart($days = 30) {
+        $query = "SELECT DATE(created_at) as date, COUNT(*) as comments 
+                  FROM " . $this->table_name . " 
+                  WHERE created_at >= DATE_SUB(NOW(), INTERVAL :days DAY)
+                  GROUP BY DATE(created_at)
+                  ORDER BY date ASC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':days', $days, PDO::PARAM_INT);
+        $stmt->execute();
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Fill in missing days with 0 comments
+        $chart_data = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days"));
+            $chart_data[$date] = 0;
+        }
+        
+        foreach ($results as $result) {
+            $chart_data[$result['date']] = (int)$result['comments'];
+        }
+        
+        return $chart_data;
+    }
 }
 
 ?>
