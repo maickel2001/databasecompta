@@ -258,8 +258,8 @@ class Post {
         $this->updated_at = $row['updated_at'];
     }
     
-    // Delete post by ID (static method for admin)
-    public function delete($id) {
+    // Delete post by ID (admin method)
+    public function deleteById($id) {
         $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
         $stmt = $this->conn->prepare($query);
         return $stmt->execute([$id]);

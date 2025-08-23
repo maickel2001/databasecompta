@@ -20,7 +20,7 @@ if ($_POST && isset($_POST['bulk_action']) && isset($_POST['selected_posts'])) {
         foreach ($selected_posts as $post_id) {
             switch ($action) {
                 case 'delete':
-                    if ($post->delete($post_id)) {
+                    if ($post->deleteById($post_id)) {
                         $success_count++;
                     }
                     break;
@@ -63,7 +63,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     } else {
         switch ($action) {
             case 'delete':
-                if ($post->delete($post_id)) {
+                if ($post->deleteById($post_id)) {
                     $_SESSION['admin_message'] = ['type' => 'success', 'text' => 'Article supprimé avec succès.'];
                 } else {
                     $_SESSION['admin_message'] = ['type' => 'error', 'text' => 'Erreur lors de la suppression.'];
